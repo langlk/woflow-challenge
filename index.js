@@ -8,21 +8,23 @@ let mostSharedCount = 1;
 async function countNodeAndChildren(nodeId) {
   // Count node
   if (nodeCounts[nodeId] !== undefined) {
+    // Node is already tracked, increment counter
     nodeCounts[nodeId] += 1;
+
+    // Check if we have a new max count
+    if (mostSharedCount < nodeCounts[nodeId]) {
+      mostSharedId = nodeId;
+      mostSharedCount = nodeCounts[nodeId];
+    }
   } else {
+    // We have a new node, add to counts object
     nodeCounts[nodeId] = 1;
-  }
 
-  // Check if we have a new max count
-  if (mostSharedCount < nodeCounts[nodeId]) {
-    mostSharedId = nodeId;
-    mostSharedCount = nodeCounts[nodeId];
+    // Since node is new, get child nodes
+    const response = await axios.get(`https://nodes-on-nodes-challenge.herokuapp.com/nodes/${nodeId}`);
+    // Recurse through child nodes
+    await Promise.all(response.data[0].child_node_ids.map(child => countNodeAndChildren(child)));
   }
-
-  // Get child nodes
-  const response = await axios.get(`https://nodes-on-nodes-challenge.herokuapp.com/nodes/${nodeId}`);
-  // Recurse through child nodes
-  await Promise.all(response.data[0].child_node_ids.map(child => countNodeAndChildren(child)));
 }
 
 async function countNodes(startNode) {
